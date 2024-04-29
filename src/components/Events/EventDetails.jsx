@@ -26,7 +26,7 @@ export default function EventDetails() {
     setIsDeleting(false);
   }
 
-  const { mutate, isDeletePending } = useMutation({
+  const { mutate, isPending: isDeletePending, isError: isErrorDeleting, error: deleteError } = useMutation({
     mutationFn: deleteEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'], refetchType: 'none' });
@@ -58,8 +58,14 @@ export default function EventDetails() {
           <h2>Are you sure?</h2>
           <p>Do you really want to delete this event? This action cannot be undone.</p>
           <div className='form-actions'>
-            <button onClick={handleStopDelete} className='button'>Cancel</button>
-            <button onClick={() => handleDelete(id)} disabled={isDeletePending} className='button'>Delete</button>
+            {isDeletePending && <p>Deleting...</p>}
+            {!isDeletePending && (
+              <>
+                <button onClick={handleStopDelete} className='button-text'>Cancel</button>
+                <button onClick={() => handleDelete(id)} disabled={isDeletePending} className='button'>Delete</button>
+              </>
+            )}
+            {isErrorDeleting && <ErrorBlock title='Failed to delete event' message={deleteError.info?.message || 'An error occurred while deleting the event.'} />}
           </div>
         </Modal>
       }
