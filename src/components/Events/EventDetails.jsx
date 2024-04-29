@@ -2,7 +2,7 @@ import { Link, Outlet } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchEventById } from '../../util/http.js';
-
+import ErrorBlock from '../UI/ErrorBlock.jsx';
 import Header from '../Header.jsx';
 
 export default function EventDetails() {
@@ -13,11 +13,19 @@ export default function EventDetails() {
     queryFn: ({signal}) => fetchEventById({id}, {signal}),
   });
 
-  console.log(data)
+  if (isError) {
+    return (
+      <ErrorBlock title="An error occurred" message={error.info?.message || 'Failed to fetch events.'} />
+    );
+  }
 
+  if (isPending) {
+    return (
+      <p>Loading...</p>
+    );
+  }
 
-  console.log(id);
-  return (
+  return (data && 
     <>
       <Outlet />
       <Header>

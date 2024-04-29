@@ -3,7 +3,6 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient();
 
 export async function fetchEvents({ signal, searchTerm }) {
-  console.log(searchTerm);
   let url = 'http://localhost:3000/events';
 
   if (searchTerm) {
@@ -62,6 +61,7 @@ export async function fetchSelectableImages({ signal }) {
 }
 
 export async function fetchEventById({ id, signal }) {
+  console.log('Fetch events by ID')
   console.log(id)
   const response = await fetch(`http://localhost:3000/events/${id}`, { signal });
   if (!response.ok) {
