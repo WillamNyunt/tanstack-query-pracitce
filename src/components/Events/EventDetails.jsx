@@ -1,17 +1,43 @@
-import { Link, Outlet } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { fetchEventById } from '../../util/http.js';
+import { Link, Outlet, useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { fetchEventById, deleteEvent } from '../../util/http.js';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 import Header from '../Header.jsx';
+import { queryClient } from '../../util/http.js';
+import LoadingIndicator from '../UI/LoadingIndicator.jsx';
+import { useState } from 'react';
+import Modal from '../UI/Modal.jsx';
 
 export default function EventDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['events', id],
-    queryFn: ({signal}) => fetchEventById({id}, {signal}),
+    queryFn: ({ signal }) => fetchEventById({ id }, { signal }),
   });
+
+  function handleStartDelete() {
+    setIsDeleting(true);
+  }
+
+  function handleStopDelete() {
+    setIsDeleting(false);
+  }
+
+  const { mutate, isDeletePending } = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'], refetchType: 'none' });
+      navigate('/events');
+    },
+  });
+
+  function handleDelete(id) {
+    mutate({ id: id });
+  }
+
 
   if (isError) {
     return (
@@ -21,12 +47,22 @@ export default function EventDetails() {
 
   if (isPending) {
     return (
-      <p>Loading...</p>
+      <LoadingIndicator />
     );
   }
 
-  return (data && 
+  return (data &&
     <>
+      {isDeleting &&
+        <Modal onClose={handleStopDelete}>
+          <h2>Are you sure?</h2>
+          <p>Do you really want to delete this event? This action cannot be undone.</p>
+          <div className='form-actions'>
+            <button onClick={handleStopDelete} className='button'>Cancel</button>
+            <button onClick={() => handleDelete(id)} disabled={isDeletePending} className='button'>Delete</button>
+          </div>
+        </Modal>
+      }
       <Outlet />
       <Header>
         <Link to="/events" className="nav-item">
@@ -37,8 +73,8 @@ export default function EventDetails() {
         <header>
           <h1>{data.title}</h1>
           <nav>
-            <button>Delete</button>
-            <Link to="edit">Edit</Link>
+            <button onClick={handleStartDelete}>Delete</button>
+            <Link to={`/events/${id}/edit`}>Edit</Link>
           </nav>
         </header>
         <div id="event-details-content">
